@@ -18,6 +18,7 @@ sw.js                     – service worker, cachar appens filer
 js/
   main.js                 – start + växla mellan lista och editor
   store.js                – IndexedDB, ENDA stället som läser/skriver anteckningar
+  supabase.js             – projektets adress + anon-nyckel, anonymt konto, anrop med dess JWT
   sync.js                 – Supabase-synk i bakgrunden
   ai.js                   – anrop till serverfunktionen
   lock.js                 – lås för privata anteckningar
@@ -25,10 +26,12 @@ js/
   ui/list.js
 tests/
   store.test.js
+  ai.test.js              – serverfunktionens logik, med låtsasversioner av Supabase och Anthropic
   sync.test.js
 supabase/
   functions/ai/index.ts   – AI-anropen, API-nyckeln bor här
-  migrations/001_notes.sql
+  migrations/001_ai_usage.sql – räknare för gränsen på AI-anrop
+  migrations/002_notes.sql
 ```
 Varje fil gör en sak. Krånglar något vet du var du ska leta.
 
@@ -49,10 +52,13 @@ Varje fil gör en sak. Krånglar något vet du var du ska leta.
  * @property {number} createdAt
  * @property {number} updatedAt
  * @property {boolean} deleted    // soft delete, krävs för synk
+ * @property {number} [titledAt]  // när texten som rubriken gjordes för skrevs, saknas = aldrig
  */
 ```
 - Det du skriver uppdaterar senaste `user`-versionen. AI lägger till en ny version.
-- "Ångra AI" = visa föregående version.
+- "Original" = texten precis före senaste AI-versionen läggs till som en ny `user`-version. Inget tas någonsin bort.
+- Listan sorteras efter när *texten* senast ändrades (senaste versionens `at`), inte `updatedAt`. Då kan rubrik, kategori m.m. ändras utan att anteckningen hoppar i listan.
+- Rubrik görs när `titledAt` är äldre än senaste textändringen. Korta enradare får ingen AI-rubrik, där visas första raden.
 - Paren original → rättad finns automatiskt för en eventuell egen modell senare.
 
 ## Supabase-tabell (skiss)
@@ -85,8 +91,11 @@ create policy "egna anteckningar" on notes
 ## AI
 - **En Supabase Edge Function** `ai` med `action`: `spellcheck`, `rewrite`, `summarize`, `title`, `categorize`.
 - Promptarna bor på servern, så de kan justeras utan att appen deployas om.
-- Kräver den anonyma användarens JWT + enkel gräns för antal anrop.
-- Liten modell för `spellcheck`, `title`, `categorize`. Större för `rewrite`, `summarize`.
+- Kräver den anonyma användarens JWT + enkel gräns för antal anrop (per användare och totalt per dygn, tabellen `ai_usage`).
+- Leverantör: Anthropic, via vanliga `fetch` utan SDK. Liten modell (`claude-haiku-5-5`) för `spellcheck`, `title`, `categorize`. Större (`claude-sonnet-5-5`) för `rewrite`, `summarize`.
+- Appen pratar med Supabase via `fetch` i `js/supabase.js`. Supabase-klienten behövs inte än; beslut om den tas i fas 3.
+- Är `SUPABASE_URL` tom i `js/supabase.js` visas inga AI-funktioner och inget anropas.
+- Markerad text: bara markeringen skickas och byts ut. Annars hela anteckningen.
 - `categorize` får listan över befintliga kategorier och väljer bland dem i första hand.
 - Rubrik och kategori körs när man lämnar anteckningen, inte medan man skriver.
 

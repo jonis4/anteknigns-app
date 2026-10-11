@@ -56,11 +56,43 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
-header button {
+header div {
+  display: flex;
+}
+
+/* Raden under sidhuvudet: AI-valen, eller ett kort besked. */
+.bar {
+  display: flex;
+  justify-content: flex-end;
+  flex: none;
+  margin: 0;
+  padding: 0 calc(var(--gutter) - 0.75rem);
+}
+
+header button,
+.bar button,
+#status {
   min-height: 2.75rem;
   padding: 0 0.75rem;
   color: var(--muted);
   font-size: 0.9375rem;
+}
+
+#status {
+  align-items: center;
+}
+
+#ai[aria-expanded="true"] {
+  color: var(--fg);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+#editor:read-only {
+  color: var(--muted);
 }
 
 button:focus-visible {

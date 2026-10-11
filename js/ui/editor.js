@@ -1,20 +1,55 @@
 // @ts-check
-import { asDeleted, createNote, currentText, getNote, putNote, withText } from '../store.js';
+import { AiError, aiEnabled, runAi } from '../ai.js';
+import {
+  asDeleted,
+  createNote,
+  currentText,
+  getNote,
+  originalText,
+  restoreOriginal,
+  updateNote,
+  withAiVersion,
+  withText,
+} from '../store.js';
 
 /** @typedef {import('../store.js').Note} Note */
+/** @typedef {import('../store.js').AiSource} AiSource */
+/** @typedef {'spellcheck' | 'rewrite' | 'summarize'} EditAction */
 
 const SAVE_DELAY = 500;
 const CONFIRM_TIME = 3000;
+const STATUS_TIME = 3000;
+
+/** @type {Record<EditAction, { source: AiSource, working: string }>} */
+const ACTIONS = {
+  spellcheck: { source: 'spellcheck', working: 'Rättar…' },
+  rewrite: { source: 'rewrite', working: 'Renskriver…' },
+  summarize: { source: 'summary', working: 'Summerar…' },
+};
+
+/** @type {Record<import('../ai.js').AiErrorCode, string>} */
+const ERRORS = {
+  offline: 'Inget nät',
+  limit: 'Dagens gräns är nådd',
+  too_long: 'Texten är för lång',
+  failed: 'Det gick inte just nu',
+};
 
 const textarea = /** @type {HTMLTextAreaElement} */ (document.getElementById('editor'));
 const deleteButton = /** @type {HTMLButtonElement} */ (document.getElementById('delete'));
+const aiButton = /** @type {HTMLButtonElement} */ (document.getElementById('ai'));
+const originalButton = /** @type {HTMLButtonElement} */ (document.getElementById('original'));
+const menu = /** @type {HTMLElement} */ (document.getElementById('ai-menu'));
+const status = /** @type {HTMLElement} */ (document.getElementById('status'));
 
 let id = '';
 /** Null tills det finns text att spara, så att tomma anteckningar aldrig hamnar i listan. @type {Note | null} */
 let note = null;
 let saveTimer = 0;
 let confirmTimer = 0;
+let statusTimer = 0;
 let confirming = false;
+let busy = false;
 /** Sparningar körs en i taget, i den ordning de begärdes. @type {Promise<void>} */
 let queue = Promise.resolve();
 
@@ -42,10 +77,17 @@ export function initEditor(onDeleted) {
       return;
     }
     await save();
-    if (note) await putNote(asDeleted(note));
+    await updateNote(id, (saved) => saved && asDeleted(saved));
     show(crypto.randomUUID(), null);
     onDeleted();
   });
+
+  aiButton.addEventListener('click', () => setMenu(menu.hidden !== false));
+  menu.addEventListener('click', (event) => {
+    const action = /** @type {HTMLElement} */ (event.target).dataset.action;
+    if (action && action in ACTIONS) runAction(/** @type {EditAction} */ (action));
+  });
+  originalButton.addEventListener('click', showOriginal);
 }
 
 /**
@@ -74,15 +116,82 @@ export function focusEditor() {
   textarea.focus();
 }
 
+/** @returns {string} id för anteckningen som ligger i editorn */
+export function currentId() {
+  return id;
+}
+
 /** @returns {Promise<void>} */
 async function write() {
   const text = textarea.value;
   if (note ? text === currentText(note) : text.trim() === '') return;
-  const next = note ? withText(note, text) : createNote(id, text);
-  await putNote(next);
-  // Först nu räknas texten som sparad. Misslyckas putNote görs ett nytt försök vid nästa sparning.
-  note = next;
-  deleteButton.hidden = note.deleted;
+  const noteId = id;
+  const saved = await updateNote(noteId, (old) => (old ? withText(old, text) : createNote(noteId, text)));
+  // Först nu räknas texten som sparad. Misslyckas det görs ett nytt försök vid nästa sparning.
+  if (saved && id === noteId) {
+    note = saved;
+    refreshButtons();
+  }
+}
+
+/**
+ * Kör en AI-funktion på markerad text, eller på hela anteckningen om inget är markerat.
+ * Resultatet blir en ny version. Går något fel är texten orörd.
+ * @param {EditAction} action
+ * @returns {Promise<void>}
+ */
+async function runAction(action) {
+  if (busy) return;
+  setMenu(false);
+  await save();
+  if (!note || note.deleted) return;
+
+  const noteId = id;
+  const before = textarea.value;
+  const hasSelection = textarea.selectionEnd > textarea.selectionStart;
+  const start = hasSelection ? textarea.selectionStart : 0;
+  const end = hasSelection ? textarea.selectionEnd : before.length;
+  // Blanktecken i kanterna skickas inte med, så att de garanterat finns kvar efteråt.
+  const [, lead, input, trail] = /** @type {RegExpMatchArray} */ (before.slice(start, end).match(/^(\s*)([\s\S]*?)(\s*)$/));
+  if (input === '') return;
+
+  setBusy(true);
+  showStatus(ACTIONS[action].working, true);
+  try {
+    const output = await runAi(action, input);
+    const after = before.slice(0, start) + lead + output + trail + before.slice(end);
+    if (after === before) {
+      if (id === noteId) showStatus('Inget att ändra');
+      return;
+    }
+    // Ny version bara om texten är densamma som den som skickades.
+    const saved = await updateNote(noteId, (old) =>
+      old && currentText(old) === before ? withAiVersion(old, after, ACTIONS[action].source) : undefined,
+    );
+    if (id === noteId && saved && currentText(saved) === after) {
+      note = saved;
+      textarea.value = after;
+      hideStatus();
+    }
+  } catch (err) {
+    if (id === noteId) showStatus(ERRORS[err instanceof AiError ? err.code : 'failed']);
+  } finally {
+    setBusy(false);
+    if (id !== noteId) hideStatus();
+    refreshButtons();
+  }
+}
+
+/** Originalet är alltid ett tryck bort: lägger tillbaka texten som fanns före AI. */
+async function showOriginal() {
+  if (busy) return;
+  await save();
+  const noteId = id;
+  const saved = await updateNote(noteId, (old) => old && restoreOriginal(old));
+  if (!saved || id !== noteId) return;
+  note = saved;
+  textarea.value = currentText(saved);
+  refreshButtons();
 }
 
 /**
@@ -93,8 +202,55 @@ function show(noteId, saved) {
   id = noteId;
   note = saved;
   textarea.value = saved ? currentText(saved) : '';
-  deleteButton.hidden = !saved;
+  setMenu(false);
+  if (!busy) hideStatus();
   resetDelete();
+  refreshButtons();
+}
+
+/** Visar bara de knappar som går att använda just nu. */
+function refreshButtons() {
+  const saved = note !== null && !note.deleted;
+  const original = note && saved ? originalText(note) : null;
+  deleteButton.hidden = !saved;
+  aiButton.hidden = !saved || !aiEnabled;
+  originalButton.hidden = original === null || original === textarea.value;
+  if (aiButton.hidden) setMenu(false);
+}
+
+/** @param {boolean} open */
+function setMenu(open) {
+  menu.hidden = !open;
+  aiButton.setAttribute('aria-expanded', String(open));
+  if (open) hideStatus();
+}
+
+/**
+ * Medan AI arbetar går texten inte att ändra, annars skulle resultatet skriva över det nya.
+ * @param {boolean} value
+ */
+function setBusy(value) {
+  busy = value;
+  textarea.readOnly = value;
+  aiButton.disabled = value;
+  originalButton.disabled = value;
+  deleteButton.disabled = value;
+}
+
+/**
+ * @param {string} text
+ * @param {boolean} [stay] ligg kvar tills något annat visas
+ */
+function showStatus(text, stay = false) {
+  clearTimeout(statusTimer);
+  status.textContent = text;
+  status.hidden = false;
+  if (!stay) statusTimer = setTimeout(hideStatus, STATUS_TIME);
+}
+
+function hideStatus() {
+  clearTimeout(statusTimer);
+  status.hidden = true;
 }
 
 function resetDelete() {

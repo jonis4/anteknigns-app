@@ -50,17 +50,19 @@ Hör ihop med:
 ## Fas 2 – AI (kärnidén)
 **Mål:** skriv slarvigt, tryck på en knapp, få det rättat – utan att originalet försvinner.
 
-- [ ] Supabase-projekt i EU-region
-- [ ] Anonym inloggning i bakgrunden (behövs för att skydda AI-funktionen)
-- [ ] Edge Function `ai` med `action`-parameter, API-nyckeln bara på servern
-- [ ] Funktionen kräver JWT + enkel gräns för antal anrop
-- [ ] **Rättstava** – lägger till en ny version, skriver aldrig över
-- [ ] Visa original / ångra AI med ett tryck
-- [ ] Den diskreta AI-knappen + AI-val när man markerar text
-- [ ] **Automatisk rubrik** när man lämnar anteckningen
-- [ ] **Renskriv** och **Summera**
-- [ ] Liten modell för rättstavning, större för renskriv/summera
-- [ ] Felhantering: inget nät eller fel från AI = texten är orörd, diskret meddelande
+- [x] Supabase-projekt i EU-region
+- [x] Driftsätt i Supabase: kör `001_ai_usage.sql`, lägg upp funktionen `ai`, sätt `ANTHROPIC_API_KEY`, fyll i `js/supabase.js` (se README)
+- [x] Anonym inloggning i bakgrunden (behövs för att skydda AI-funktionen)
+- [x] Edge Function `ai` med `action`-parameter, API-nyckeln bara på servern
+- [x] Funktionen kräver JWT + enkel gräns för antal anrop
+- [x] **Rättstava** – lägger till en ny version, skriver aldrig över
+- [x] Visa original / ångra AI med ett tryck
+- [x] Den diskreta AI-knappen + AI-val när man markerar text
+- [x] **Automatisk rubrik** när man lämnar anteckningen
+- [x] **Renskriv** och **Summera**
+- [x] Liten modell för rättstavning, större för renskriv/summera
+- [x] Felhantering: inget nät eller fel från AI = texten är orörd, diskret meddelande
+- [ ] Testa mot riktiga Supabase och riktig modell (koden är bara testad mot låtsastjänster)
 
 **Klart när:** rättstavning funkar på mobilen, och det går alltid att komma tillbaka till exakt det du skrev.
 

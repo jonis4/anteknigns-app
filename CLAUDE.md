@@ -17,6 +17,7 @@ Minimal anteckningsapp som PWA, hostad på GitHub Pages. Läs `docs/` innan du �
 - Local-first: IndexedDB är sanningen, molnet en kopia. Bara `js/store.js` läser och skriver anteckningar.
 - Dataflöde åt ett håll: UI → store → sync → Supabase. UI:t anropar aldrig Supabase direkt.
 - AI skriver aldrig över text. Varje AI-resultat är en ny version.
+- Hemliga nycklar finns bara som hemligheter i Supabase, aldrig i repot. `js/supabase.js` innehåller bara publika värden.
 - Systemtypsnitt, mörkt läge via `prefers-color-scheme`, inga inställningar. Extremt minimalt UI (Dieter Rams, Apple) – lägg inte till UI som fasen inte kräver.
 - Ny eller omdöpt fil i appen: lägg till den i `FILES` i `sw.js`. Bumpa `CACHE` (`notes-vN`) vid varje deploy.
 

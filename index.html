@@ -16,8 +16,18 @@
   <main id="editor-view">
     <header>
       <button id="show-list" type="button">Anteckningar</button>
-      <button id="delete" type="button" hidden>Ta bort</button>
+      <div>
+        <button id="original" type="button" hidden>Original</button>
+        <button id="ai" type="button" aria-expanded="false" aria-controls="ai-menu" hidden>AI</button>
+        <button id="delete" type="button" hidden>Ta bort</button>
+      </div>
     </header>
+    <div id="ai-menu" class="bar" hidden>
+      <button type="button" data-action="spellcheck">Rätta</button>
+      <button type="button" data-action="rewrite">Renskriv</button>
+      <button type="button" data-action="summarize">Summera</button>
+    </div>
+    <p id="status" class="bar" role="status" hidden></p>
     <textarea id="editor" aria-label="Anteckning" autofocus></textarea>
   </main>
   <main id="list-view" hidden>

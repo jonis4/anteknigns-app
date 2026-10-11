@@ -2,7 +2,7 @@
 /// <reference lib="webworker" />
 
 // Bumpa versionen vid varje deploy, annars ligger gammal kod kvar i cachen.
-const CACHE = 'notes-v2';
+const CACHE = 'notes-v3';
 
 /** Appens filer, relativa till sw.js så att det funkar under /<reponamn>/. */
 const FILES = [
@@ -11,6 +11,8 @@ const FILES = [
   './app.css',
   './js/main.js',
   './js/store.js',
+  './js/supabase.js',
+  './js/ai.js',
   './js/ui/editor.js',
   './js/ui/list.js',
   './manifest.webmanifest',
@@ -30,7 +32,8 @@ sw.addEventListener('activate', (event) => {
 });
 
 sw.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
+  // Bara appens egna filer. Anrop till Supabase går alltid direkt till nätet.
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== sw.location.origin) return;
   event.respondWith(cacheFirst(event.request));
 });
 

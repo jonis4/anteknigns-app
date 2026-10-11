@@ -1,5 +1,5 @@
 // @ts-check
-import { currentText } from '../store.js';
+import { displayTitle, editedAt } from '../store.js';
 
 /** @typedef {import('../store.js').Note} Note */
 
@@ -21,11 +21,11 @@ export function renderList(notes, onOpen) {
 function row(note, onOpen) {
   const title = document.createElement('span');
   title.className = 'title';
-  title.textContent = firstLine(currentText(note));
+  title.textContent = displayTitle(note);
 
   const time = document.createElement('time');
-  time.dateTime = new Date(note.updatedAt).toISOString();
-  time.textContent = formatDate(note.updatedAt);
+  time.dateTime = new Date(editedAt(note)).toISOString();
+  time.textContent = formatDate(editedAt(note));
 
   const button = document.createElement('button');
   button.type = 'button';
@@ -35,14 +35,6 @@ function row(note, onOpen) {
   const item = document.createElement('li');
   item.append(button);
   return item;
-}
-
-/**
- * @param {string} text
- * @returns {string}
- */
-function firstLine(text) {
-  return text.trim().split('\n', 1)[0].trim();
 }
 
 /**
