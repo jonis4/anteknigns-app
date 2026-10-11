@@ -19,13 +19,13 @@ Hör ihop med:
 ## Fas 0 – Grunden
 **Mål:** en tom app som går att installera och som öppnar utan nät.
 
-- [ ] Skapa GitHub-repo och slå på GitHub Pages
+- [x] Skapa GitHub-repo och slå på GitHub Pages
 - [x] `index.html`, `app.css`, `js/main.js` med en tom textarea
 - [x] `manifest.webmanifest` + ikon
 - [x] `sw.js` som cachar appens filer (versionsnummer i cache-namnet)
 - [x] Systemtypsnitt och mörkt läge via `prefers-color-scheme` direkt från start
 - [x] `// @ts-check` + JSDoc uppsatt så VS Code kollar typer
-- [ ] Installera på mobilen ("Lägg till på startskärmen") och på datorn
+- [x] Installera på mobilen ("Lägg till på startskärmen") och på datorn
 
 **Klart när:** appen ligger på startskärmen, öppnar direkt och funkar i flygplansläge.
 
@@ -34,14 +34,14 @@ Hör ihop med:
 ## Fas 1 – Skriva lokalt (första användbara versionen)
 **Mål:** en riktig anteckningsapp på en enhet. Ingen AI, inget moln.
 
-- [ ] `store.js` – IndexedDB, enda stället som läser/skriver anteckningar
-- [ ] Datamodell med versioner och soft delete (se arkitektur.md)
-- [ ] Appen öppnar direkt i ett nytt tomt dokument
-- [ ] Autospar: debounce ~500 ms + spara vid `visibilitychange`
-- [ ] Tomma anteckningar sparas inte (annars fylls listan av skräp)
-- [ ] Lista sorterad efter datum, öppna och ändra gamla anteckningar
-- [ ] Ta bort anteckning
-- [ ] Tester för `store.js` med `node --test`
+- [x] `store.js` – IndexedDB, enda stället som läser/skriver anteckningar
+- [x] Datamodell med versioner och soft delete (se arkitektur.md)
+- [x] Appen öppnar direkt i ett nytt tomt dokument
+- [x] Autospar: debounce ~500 ms + spara vid `visibilitychange`
+- [x] Tomma anteckningar sparas inte (annars fylls listan av skräp)
+- [x] Lista sorterad efter datum, öppna och ändra gamla anteckningar
+- [x] Ta bort anteckning
+- [x] Tester för `store.js` med `node --test`
 
 **Klart när:** du har använt appen som din riktiga anteckningsapp i en vecka utan att tappa text.
 

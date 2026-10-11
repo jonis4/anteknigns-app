@@ -2,7 +2,7 @@
 <html lang="sv">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#111111" media="(prefers-color-scheme: dark)">
   <title>Anteckningar</title>
@@ -13,6 +13,18 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <textarea id="editor" aria-label="Anteckning" autofocus></textarea>
+  <main id="editor-view">
+    <header>
+      <button id="show-list" type="button">Anteckningar</button>
+      <button id="delete" type="button" hidden>Ta bort</button>
+    </header>
+    <textarea id="editor" aria-label="Anteckning" autofocus></textarea>
+  </main>
+  <main id="list-view" hidden>
+    <header>
+      <button id="new" type="button">Ny</button>
+    </header>
+    <ul id="notes"></ul>
+  </main>
 </body>
 </html>
