@@ -25,9 +25,11 @@ js/
   ui/editor.js
   ui/list.js
   ui/signin.js            – inloggning via mejl, för synk
+  ui/pin.js               – välj och skriv PIN-kod
 tests/
   store.test.js
   ai.test.js              – serverfunktionens logik, med låtsasversioner av Supabase och Anthropic
+  lock.test.js
   sync.test.js
 supabase/
   functions/ai/index.ts   – AI-anropen, API-nyckeln bor här
@@ -81,15 +83,23 @@ Två policies: var och en kommer bara åt sina egna rader, och anonyma konton ko
 - Fortfarande ingen Supabase-klient: synken är några `fetch`-anrop mot PostgREST.
 
 ## AI
-- **En Supabase Edge Function** `ai` med `action`: `spellcheck`, `rewrite`, `summarize`, `title`, `categorize`.
+- **En Supabase Edge Function** `ai` med `action`: `spellcheck`, `rewrite`, `summarize`, `organize` (rubrik + kategori i ett anrop). `title` finns kvar för äldre versioner av appen.
 - Promptarna bor på servern, så de kan justeras utan att appen deployas om.
 - Kräver den anonyma användarens JWT + enkel gräns för antal anrop (per användare och totalt per dygn, tabellen `ai_usage`).
-- Leverantör: Anthropic, via vanliga `fetch` utan SDK. Liten modell (`claude-haiku-5-5`) för `spellcheck`, `title`, `categorize`. Större (`claude-sonnet-5-5`) för `rewrite`, `summarize`.
+- Leverantör: Anthropic, via vanliga `fetch` utan SDK. Liten modell (`claude-haiku-5-5`) för `spellcheck`, `organize`. Större (`claude-sonnet-5-5`) för `rewrite`, `summarize`.
 - Appen pratar med Supabase via `fetch` i `js/supabase.js`, utan Supabase-klienten.
 - Är `SUPABASE_URL` tom i `js/supabase.js` visas inga AI-funktioner och inget anropas.
 - Markerad text: bara markeringen skickas och byts ut. Annars hela anteckningen.
-- `categorize` får listan över befintliga kategorier och väljer bland dem i första hand.
+- `organize` får listan över befintliga kategorier och väljer bland dem i första hand.
+- AI:s kategori gäller bara när anteckningen saknar kategori. Den flyttas aldrig i efterhand, och ett eget val står alltid kvar. Rubriken görs däremot om när texten ändras.
 - Rubrik och kategori körs när man lämnar anteckningen, inte medan man skriver.
+
+## Privat och lås
+- Privat är ett aktivt val per anteckning (långtryck eller högerklick i listan). Flaggan `private` synkas som allt annat.
+- Privata anteckningar visas inte i listan och går inte att öppna, inte heller via bakåtknappen, förrän låset är öppet.
+- Låset är stängt vid start och stängs så fort appen lämnas (`visibilitychange`).
+- PIN-koden sparas bara på enheten, som saltat PBKDF2-hashvärde i `localStorage`. Varje enhet har alltså sin egen PIN-kod.
+- Det är ett insynsskydd, inte kryptering: texten ligger i klartext i IndexedDB och i Supabase, precis som kravspecen säger.
 
 ## Kända buggfällor och hur de undviks
 | Fälla | Lösning |

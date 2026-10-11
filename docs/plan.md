@@ -72,11 +72,11 @@ Hör ihop med:
 **Mål:** skriv på mobilen, läs på datorn.
 
 - [x] Tabell `notes` + Row Level Security (bara ägaren ser sina rader) – SQL skriven i `002_notes.sql`
-- [ ] Kör `002_notes.sql` i Supabase och sätt Site URL under URL Configuration (se README)
+- [x] Kör `002_notes.sql` i Supabase och sätt Site URL under URL Configuration (se README)
 - [x] `sync.js` – skickar lokala ändringar, hämtar andras, last-write-wins per anteckning
 - [x] Synk vid start, efter ändringar och när nätet kommer tillbaka
 - [x] Logga in via länk i mejlet (först när du vill synka) – ersätter "koppla det anonyma kontot", se arkitektur.md
-- [ ] Logga in med samma mejl på andra enheten
+- [x] Logga in med samma mejl på andra enheten
 - [x] Tester för merge-logiken
 - [ ] Testa: skriv offline på båda enheterna, slå på nätet, inget ska försvinna
 
@@ -87,11 +87,12 @@ Hör ihop med:
 ## Fas 4 – Organisering
 **Mål:** appen håller ordning åt dig.
 
-- [ ] **Tyst kategorisering** – AI väljer bland befintliga kategorier, skapar ny bara om inget passar
-- [ ] Kategorin syns i listan, flytta om det blivit fel
-- [ ] **Privat** via swipe/långtryck i listan
-- [ ] Lås för privata anteckningar (PIN först, biometri om det går smidigt)
-- [ ] Privata anteckningar syns aldrig i listan förrän låset är öppnat
+- [x] **Tyst kategorisering** – AI väljer bland befintliga kategorier, skapar ny bara om inget passar
+- [x] Kategorin syns i listan, flytta om det blivit fel
+- [x] **Privat** via långtryck i listan (högerklick på dator)
+- [x] Lås för privata anteckningar (PIN)
+- [x] Privata anteckningar syns aldrig i listan förrän låset är öppnat
+- [ ] Lägg upp den nya versionen av funktionen `ai` i Supabase (annars görs varken rubrik eller kategori)
 
 **Klart när:** du kan låna ut mobilen utan att privata anteckningar syns, och kategorierna stämmer oftast.
 
@@ -113,9 +114,7 @@ Hör ihop med:
 - **Andra användare** – kräver kostnadskontroll per användare innan det öppnas
 
 ## Öppna frågor
-- PIN eller biometri för privat-låset? (Biometri i PWA via WebAuthn går men är krångligare)
 - Vilka modeller exakt, och vad kostar det per månad vid din användning?
-- När ska kategoriseringen köras – när man lämnar anteckningen, eller samlat i bakgrunden?
 
 ## Saker jag märkt
 *(fyll på medan du använder appen)*

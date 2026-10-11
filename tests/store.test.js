@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   asDeleted,
+  categoriesOf,
   createNote,
   currentText,
   displayTitle,
@@ -12,6 +13,9 @@ import {
   restoreOriginal,
   visibleNotes,
   withAiVersion,
+  withCategory,
+  withPrivate,
+  withSuggestedCategory,
   withText,
   withTitle,
 } from '../js/store.js';
@@ -124,9 +128,8 @@ test('restoreOriginal lägger tillbaka originalet som en ny version, utan att ta
   assert.equal(restoreOriginal(createNote('b', 'utan AI', 1000), 2000).versions.length, 1);
 });
 
-test('rubrik behövs för långa anteckningar vars text ändrats sedan sist', () => {
-  assert.equal(needsTitle(createNote('a', 'köp mjölk', 1000)), false);
-  assert.equal(needsTitle(createNote('a', 'kort\nmen två rader', 1000)), true);
+test('rubrik och kategori behövs när texten ändrats sedan sist, även för korta anteckningar', () => {
+  assert.equal(needsTitle(createNote('a', 'köp mjölk', 1000)), true);
   const long = createNote('a', LONG, 1000);
   assert.equal(needsTitle(long), true);
   assert.equal(needsTitle(asDeleted(long, 2000)), false);
@@ -150,4 +153,42 @@ test('displayTitle: AI-rubriken om den finns, annars första raden', () => {
   const titled = withTitle(createNote('a', LONG, 1000), 'Rubrik', 2000);
   assert.equal(displayTitle(titled), 'Rubrik');
   assert.equal(displayTitle(withText(titled, 'kort nu', 3000)), 'kort nu');
+});
+
+test('AI:s kategori gäller bara när anteckningen saknar kategori', () => {
+  const note = createNote('a', 'köp mjölk', 1000);
+  const sorted = withSuggestedCategory(note, 'Inköp', 2000);
+  assert.equal(sorted.category, 'Inköp');
+  assert.equal(sorted.updatedAt, 2000);
+  assert.equal(withSuggestedCategory(sorted, 'Mat', 3000), sorted);
+  assert.equal(withSuggestedCategory(note, '', 3000), note);
+});
+
+test('ett eget val av kategori står kvar när AI föreslår en annan', () => {
+  const chosen = withCategory(createNote('a', 'köp mjölk', 1000), 'Hemma', 2000);
+  assert.equal(chosen.category, 'Hemma');
+  assert.equal(withSuggestedCategory(chosen, 'Inköp', 3000).category, 'Hemma');
+  assert.equal(withCategory(chosen, 'Hemma', 3000), chosen);
+});
+
+test('kategori och privat ändrar inte när texten senast ändrades', () => {
+  const note = createNote('a', 'text', 1000);
+  const changed = withPrivate(withCategory(note, 'Idéer', 2000), true, 3000);
+  assert.equal(changed.private, true);
+  assert.equal(changed.updatedAt, 3000);
+  assert.equal(editedAt(changed), 1000);
+  assert.equal(note.private, false);
+  assert.equal(withPrivate(changed, true, 4000), changed);
+});
+
+test('categoriesOf: unika, i bokstavsordning, utan tomma och borttagna', () => {
+  const notes = [
+    withCategory(createNote('a', 'ett', 1000), 'Ö-saker'),
+    withCategory(createNote('b', 'två', 1000), 'Idéer'),
+    withCategory(createNote('c', 'tre', 1000), 'Idéer'),
+    withCategory(createNote('d', 'fyra', 1000), 'Arbete'),
+    createNote('e', 'utan', 1000),
+    asDeleted(withCategory(createNote('f', 'borta', 1000), 'Borttaget')),
+  ];
+  assert.deepEqual(categoriesOf(notes), ['Arbete', 'Idéer', 'Ö-saker']);
 });

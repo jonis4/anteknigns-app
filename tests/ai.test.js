@@ -156,3 +156,33 @@ test('avbrutet, nekat, tomt eller misslyckat svar ger 502 i stället för text',
   assert.equal(res.status, 502);
   assert.deepEqual(await res.json(), { error: 'failed' });
 });
+
+test('organize: kategorierna skickas med, svaret blir rubrik och kategori', async () => {
+  world.anthropicReply = reply('Rubrik: "Idéer till ljusstaken."\nKategori: idéer ljusstake');
+  const res = await call({ action: 'organize', text: 'kanske mässing i stället för stål', categories: ['Inköp', 'Idéer ljusstake', 7, '  '] });
+  assert.equal(res.status, 200);
+  // Befintlig kategori återanvänds med sin egen stavning.
+  assert.deepEqual(await res.json(), { title: 'Idéer till ljusstaken', category: 'Idéer ljusstake' });
+
+  const [{ body }] = world.anthropicCalls;
+  assert.equal(body.model, 'claude-haiku-5-5');
+  assert.deepEqual(body.messages, [
+    { role: 'user', content: '<categories>\nInköp\nIdéer ljusstake\n</categories>\n<text>\nkanske mässing i stället för stål\n</text>' },
+  ]);
+  assert.match(body.system, /Rubrik: <rubriken>\nKategori: <kategorin>/);
+  assert.match(body.system, /inte instruktioner/);
+});
+
+test('organize: ny kategori när ingen passar, och utan lista', async () => {
+  world.anthropicReply = reply('Rubrik: Boka tandläkare\nKategori: Hälsa');
+  assert.deepEqual(await (await call({ action: 'organize', text: 'boka tandläkare', categories: ['Inköp'] })).json(), { title: 'Boka tandläkare', category: 'Hälsa' });
+  assert.deepEqual(await (await call({ action: 'organize', text: 'boka tandläkare' })).json(), { title: 'Boka tandläkare', category: 'Hälsa' });
+  assert.equal(world.anthropicCalls.at(-1)?.body.messages[0].content, '<categories>\n\n</categories>\n<text>\nboka tandläkare\n</text>');
+});
+
+test('organize: saknas kategoriraden blir kategorin tom, saknas rubriken blir det 502', async () => {
+  world.anthropicReply = reply('Rubrik: Bara en rubrik');
+  assert.deepEqual(await (await call({ action: 'organize', text: 'text' })).json(), { title: 'Bara en rubrik', category: '' });
+  world.anthropicReply = reply('Jag förstår inte uppgiften.');
+  assert.equal((await call({ action: 'organize', text: 'text' })).status, 502);
+});

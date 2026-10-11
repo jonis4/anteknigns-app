@@ -15,7 +15,7 @@
  * @property {number} createdAt
  * @property {number} updatedAt
  * @property {boolean} deleted    // soft delete, krävs för synk
- * @property {number} [titledAt]  // editedAt när rubriken gjordes, saknas = aldrig
+ * @property {number} [titledAt]  // editedAt när rubrik och kategori senast gjordes, saknas = aldrig
  */
 
 /** @typedef {Exclude<Version['source'], 'user'>} AiSource */
@@ -137,12 +137,13 @@ function isShort(note) {
 }
 
 /**
- * Sant när anteckningen är lång nog för en egen rubrik och texten har ändrats sedan den senaste gjordes.
+ * Sant när texten har ändrats sedan rubrik och kategori senast gjordes.
+ * Gäller även korta anteckningar: de visar sin första rad som rubrik, men ska ändå få en kategori.
  * @param {Note} note
  * @returns {boolean}
  */
 export function needsTitle(note) {
-  return !note.deleted && !isShort(note) && editedAt(note) > (note.titledAt ?? 0);
+  return !note.deleted && editedAt(note) > (note.titledAt ?? 0);
 }
 
 /**
@@ -153,6 +154,49 @@ export function needsTitle(note) {
  */
 export function withTitle(note, title, now = Date.now()) {
   return { ...note, title, titledAt: editedAt(note), updatedAt: now };
+}
+
+/**
+ * Kategorin som AI föreslår. Gäller bara om anteckningen saknar kategori, så att den aldrig
+ * flyttas runt i efterhand och ett eget val alltid står kvar.
+ * @param {Note} note
+ * @param {string} category
+ * @param {number} [now]
+ * @returns {Note}
+ */
+export function withSuggestedCategory(note, category, now = Date.now()) {
+  return note.category === '' && category !== '' ? { ...note, category, updatedAt: now } : note;
+}
+
+/**
+ * Kategorin man själv väljer. Tom sträng = ingen kategori.
+ * @param {Note} note
+ * @param {string} category
+ * @param {number} [now]
+ * @returns {Note}
+ */
+export function withCategory(note, category, now = Date.now()) {
+  return note.category === category ? note : { ...note, category, updatedAt: now };
+}
+
+/**
+ * @param {Note} note
+ * @param {boolean} value
+ * @param {number} [now]
+ * @returns {Note}
+ */
+export function withPrivate(note, value, now = Date.now()) {
+  return note.private === value ? note : { ...note, private: value, updatedAt: now };
+}
+
+/**
+ * Kategorierna som används, i bokstavsordning.
+ * @param {Note[]} notes
+ * @returns {string[]}
+ */
+export function categoriesOf(notes) {
+  const used = new Set(notes.filter((note) => !note.deleted && note.category !== '').map((note) => note.category));
+  return [...used].sort((a, b) => a.localeCompare(b, 'sv'));
 }
 
 /**

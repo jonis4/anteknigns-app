@@ -91,14 +91,16 @@ export function initEditor(onDeleted) {
 }
 
 /**
- * Öppnar anteckningen med det id:t. Finns den inte blir det en ny, tom anteckning.
+ * Öppnar anteckningen med det id:t. Finns den inte, eller är den privat och låset stängt,
+ * blir det en ny, tom anteckning.
  * @param {string} noteId
+ * @param {boolean} unlocked sant när privata anteckningar får visas
  * @returns {Promise<void>}
  */
-export async function openNote(noteId) {
+export async function openNote(noteId, unlocked) {
   await save();
   const found = await getNote(noteId);
-  if (found?.deleted) show(crypto.randomUUID(), null);
+  if (found?.deleted || (found?.private && !unlocked)) show(crypto.randomUUID(), null);
   else show(noteId, found ?? null);
 }
 
@@ -129,6 +131,11 @@ export async function reloadNote() {
   if (!found || id !== noteId || textarea.value !== shown || found.updatedAt === note?.updatedAt) return;
   if (found.deleted) show(crypto.randomUUID(), null);
   else show(noteId, found);
+}
+
+/** @returns {boolean} sant när anteckningen i editorn är privat */
+export function showsPrivate() {
+  return note?.private === true;
 }
 
 /** @returns {string} id för anteckningen som ligger i editorn */

@@ -45,6 +45,8 @@ Utan de här stegen fungerar appen som vanligt, men utan AI-knappen.
 
 Promptar, modeller och gränser står överst i `index.ts`. Ändras de räcker det att lägga upp funktionen igen; appen behöver inte deployas om.
 
+**När `index.ts` har ändrats i repot** måste den läggas upp på nytt: Edge Functions → `ai` → Code → klistra in hela filen → Deploy. Gör det före push när appen börjar använda något nytt i funktionen, annars anropar appen något som inte finns än.
+
 ## Synk mellan enheter (Supabase)
 
 Utan de här stegen fungerar appen som vanligt, men knappen "Synka" leder ingenstans.
