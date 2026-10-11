@@ -116,6 +116,21 @@ export function focusEditor() {
   textarea.focus();
 }
 
+/**
+ * Visar anteckningen på nytt när den ändrats från en annan enhet.
+ * Görs bara om inget osparat står i editorn, annars vinner det man håller på att skriva.
+ * @returns {Promise<void>}
+ */
+export async function reloadNote() {
+  const shown = textarea.value;
+  if (busy || (note ? shown !== currentText(note) : shown !== '')) return;
+  const noteId = id;
+  const found = await getNote(noteId);
+  if (!found || id !== noteId || textarea.value !== shown || found.updatedAt === note?.updatedAt) return;
+  if (found.deleted) show(crypto.randomUUID(), null);
+  else show(noteId, found);
+}
+
 /** @returns {string} id för anteckningen som ligger i editorn */
 export function currentId() {
   return id;

@@ -2,7 +2,7 @@
 /// <reference lib="webworker" />
 
 // Bumpa versionen vid varje deploy, annars ligger gammal kod kvar i cachen.
-const CACHE = 'notes-v3';
+const CACHE = 'notes-v4';
 
 /** Appens filer, relativa till sw.js så att det funkar under /<reponamn>/. */
 const FILES = [
@@ -13,8 +13,10 @@ const FILES = [
   './js/store.js',
   './js/supabase.js',
   './js/ai.js',
+  './js/sync.js',
   './js/ui/editor.js',
   './js/ui/list.js',
+  './js/ui/signin.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

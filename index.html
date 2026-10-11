@@ -33,8 +33,20 @@
   <main id="list-view" hidden>
     <header>
       <button id="new" type="button">Ny</button>
+      <button id="show-signin" type="button" hidden>Synka</button>
     </header>
     <ul id="notes"></ul>
+  </main>
+  <main id="signin-view" hidden>
+    <header>
+      <button id="signin-back" type="button">Anteckningar</button>
+    </header>
+    <form id="signin">
+      <p id="signin-text"></p>
+      <input id="signin-input" required>
+      <button id="signin-button" type="submit"></button>
+      <p id="signin-status" role="status"></p>
+    </form>
   </main>
 </body>
 </html>

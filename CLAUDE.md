@@ -8,7 +8,7 @@ Minimal anteckningsapp som PWA, hostad på GitHub Pages. Läs `docs/` innan du �
 
 ## Arbetssätt
 - **Bygg en fas i taget.** Börja aldrig på nästa fas utan att bli ombedd. Bocka av i `docs/plan.md` när något är klart.
-- **Lägg inte till något beroende utan att fråga först.** Enda planerade externa biblioteket är Supabase-klienten (pinnad version).
+- **Lägg inte till något beroende utan att fråga först.** Hittills finns inga: Supabase anropas med `fetch`.
 
 ## Grundregler
 - Vanilla JS med ES-moduler. Inget byggsteg, inga ramverk, ingen npm för appen. Filerna i repot är exakt det GitHub Pages serverar.

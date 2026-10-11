@@ -184,17 +184,29 @@ function isEmpty(text) {
 
 // --- IndexedDB ---
 
+/** Lokala ändringar som inte har skickats till molnet än: anteckningens id → dess updatedAt. */
+const DIRTY = 'dirty';
+
 /** @type {Promise<IDBDatabase> | undefined} */
 let dbPromise;
+
+/** @type {Set<() => void>} */
+const listeners = new Set();
 
 /** @returns {Promise<IDBDatabase>} */
 function openDb() {
   dbPromise ??= new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE, { keyPath: 'id' });
+    const request = indexedDB.open(DB_NAME, 2);
+    request.onupgradeneeded = (event) => {
+      const db = request.result;
+      if (event.oldVersion < 1) db.createObjectStore(STORE, { keyPath: 'id' });
+      if (event.oldVersion < 2) db.createObjectStore(DIRTY);
     };
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      // En nyare version av appen i en annan flik ska kunna uppgradera databasen.
+      request.result.onversionchange = () => request.result.close();
+      resolve(request.result);
+    };
     request.onerror = () => reject(request.error);
   });
   return dbPromise;
@@ -209,6 +221,18 @@ function done(request) {
   return new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * @param {IDBTransaction} tx
+ * @returns {Promise<void>}
+ */
+function committed(tx) {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
   });
 }
 
@@ -233,22 +257,77 @@ export async function listNotes() {
  * Klar först när transaktionen är genomförd, alltså när ändringen ligger på disk.
  * @param {string} id
  * @param {(saved: Note | undefined) => Note | undefined} change ger den nya anteckningen, eller undefined för att låta bli
+ * @param {{ remote?: boolean }} [options] remote: ändringen kommer från molnet och ska inte skickas tillbaka dit
  * @returns {Promise<Note | undefined>} det som nu är sparat
  */
-export async function updateNote(id, change) {
+export async function updateNote(id, change, { remote = false } = {}) {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
-    const store = tx.objectStore(STORE);
-    const request = store.get(id);
-    /** @type {Note | undefined} */
-    let result;
+  const tx = db.transaction([STORE, DIRTY], 'readwrite');
+  const store = tx.objectStore(STORE);
+  const request = store.get(id);
+  /** @type {Note | undefined} */
+  let result;
+  let changed = false;
+  request.onsuccess = () => {
+    result = change(request.result) ?? request.result;
+    changed = result !== request.result && result !== undefined;
+    if (!changed || !result) return;
+    store.put(result);
+    if (!remote) tx.objectStore(DIRTY).put(result.updatedAt, id);
+  };
+  await committed(tx);
+  if (changed && !remote) for (const listener of listeners) listener();
+  return result;
+}
+
+/**
+ * Anropas efter varje lokal ändring som behöver skickas till molnet.
+ * @param {() => void} listener
+ */
+export function onLocalChange(listener) {
+  listeners.add(listener);
+}
+
+/** @returns {Promise<Note[]>} anteckningar med ändringar som inte har skickats till molnet */
+export async function dirtyNotes() {
+  const db = await openDb();
+  const tx = db.transaction([STORE, DIRTY]);
+  const [ids, notes] = await Promise.all([
+    done(tx.objectStore(DIRTY).getAllKeys()),
+    done(/** @type {IDBRequest<Note[]>} */ (tx.objectStore(STORE).getAll())),
+  ]);
+  const dirty = new Set(ids);
+  return notes.filter((note) => dirty.has(note.id));
+}
+
+/**
+ * Markerar anteckningarna som skickade. En som hunnit ändras igen sedan dess ligger kvar.
+ * @param {Note[]} sent
+ * @returns {Promise<void>}
+ */
+export async function clearDirty(sent) {
+  const db = await openDb();
+  const tx = db.transaction(DIRTY, 'readwrite');
+  const store = tx.objectStore(DIRTY);
+  for (const note of sent) {
+    const request = store.get(note.id);
     request.onsuccess = () => {
-      result = change(request.result) ?? request.result;
-      if (result !== request.result && result) store.put(result);
+      if (request.result === note.updatedAt) store.delete(note.id);
     };
-    tx.oncomplete = () => resolve(result);
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
+  }
+  await committed(tx);
+}
+
+/**
+ * Köar alla anteckningar för att skickas, t.ex. första gången enheten loggar in.
+ * @returns {Promise<void>}
+ */
+export async function markAllDirty() {
+  const db = await openDb();
+  const tx = db.transaction([STORE, DIRTY], 'readwrite');
+  const request = /** @type {IDBRequest<Note[]>} */ (tx.objectStore(STORE).getAll());
+  request.onsuccess = () => {
+    for (const note of request.result) tx.objectStore(DIRTY).put(note.updatedAt, note.id);
+  };
+  await committed(tx);
 }

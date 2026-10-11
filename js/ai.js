@@ -1,5 +1,5 @@
 // @ts-check
-import { configured, post } from './supabase.js';
+import { configured, request } from './supabase.js';
 
 /** @typedef {'spellcheck' | 'rewrite' | 'summarize' | 'title'} AiAction */
 /** @typedef {'offline' | 'limit' | 'too_long' | 'failed'} AiErrorCode */
@@ -30,7 +30,7 @@ export async function runAi(action, text) {
   /** @type {Response} */
   let res;
   try {
-    res = await post('/functions/v1/ai', { action, text }, AbortSignal.timeout(TIMEOUT));
+    res = await request('/functions/v1/ai', { body: { action, text }, signal: AbortSignal.timeout(TIMEOUT) });
   } catch (err) {
     // fetch kastar TypeError när nätet inte går att nå. Allt annat (t.ex. timeout) är ett vanligt fel.
     throw new AiError(err instanceof TypeError ? 'offline' : 'failed');

@@ -44,3 +44,17 @@ Utan de här stegen fungerar appen som vanligt, men utan AI-knappen.
 7. Bumpa versionen i `sw.js`, commit och push.
 
 Promptar, modeller och gränser står överst i `index.ts`. Ändras de räcker det att lägga upp funktionen igen; appen behöver inte deployas om.
+
+## Synk mellan enheter (Supabase)
+
+Utan de här stegen fungerar appen som vanligt, men knappen "Synka" leder ingenstans.
+
+1. **Skapa tabellen:** SQL Editor → klistra in [supabase/migrations/002_notes.sql](supabase/migrations/002_notes.sql) → Run.
+2. **Tala om var appen finns:** Authentication → URL Configuration. Sätt **Site URL** till appens adress, t.ex. `https://<användare>.github.io/<reponamn>/`, och lägg till samma adress under **Redirect URLs**. Länken i inloggningsmejlet leder dit.
+3. Bumpa versionen i `sw.js`, commit och push.
+
+Sedan, på varje enhet: Anteckningar → **Synka** → mejladress → öppna länken i mejlet **på samma enhet**. Länken öppnas i webbläsaren; den installerade appen delar lagring med den och blir inloggad samtidigt. Första gången skickas allt som finns på enheten upp.
+
+Med en egen SMTP-tjänst går mejlmallarna att ändra. Lägg då till `{{ .Token }}` i **Confirm sign up** och **Magic link**, så går koden att skriva direkt i appen i stället.
+
+Supabases inbyggda mejltjänst skickar bara några få mejl i timmen. Det räcker för eget bruk; för fler behövs en egen SMTP-tjänst under Authentication → Emails → SMTP Settings.

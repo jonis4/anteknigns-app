@@ -62,7 +62,7 @@ Hör ihop med:
 - [x] **Renskriv** och **Summera**
 - [x] Liten modell för rättstavning, större för renskriv/summera
 - [x] Felhantering: inget nät eller fel från AI = texten är orörd, diskret meddelande
-- [ ] Testa mot riktiga Supabase och riktig modell (koden är bara testad mot låtsastjänster)
+- [x] Testa mot riktiga Supabase och riktig modell
 
 **Klart när:** rättstavning funkar på mobilen, och det går alltid att komma tillbaka till exakt det du skrev.
 
@@ -71,12 +71,13 @@ Hör ihop med:
 ## Fas 3 – Synk mellan enheter
 **Mål:** skriv på mobilen, läs på datorn.
 
-- [ ] Tabell `notes` + Row Level Security (bara ägaren ser sina rader)
-- [ ] `sync.js` – skickar lokala ändringar, hämtar andras, last-write-wins per anteckning
-- [ ] Synk vid start, efter ändringar och när nätet kommer tillbaka
-- [ ] Koppla det anonyma kontot till mejl (först när du vill synka)
+- [x] Tabell `notes` + Row Level Security (bara ägaren ser sina rader) – SQL skriven i `002_notes.sql`
+- [ ] Kör `002_notes.sql` i Supabase och sätt Site URL under URL Configuration (se README)
+- [x] `sync.js` – skickar lokala ändringar, hämtar andras, last-write-wins per anteckning
+- [x] Synk vid start, efter ändringar och när nätet kommer tillbaka
+- [x] Logga in via länk i mejlet (först när du vill synka) – ersätter "koppla det anonyma kontot", se arkitektur.md
 - [ ] Logga in med samma mejl på andra enheten
-- [ ] Tester för merge-logiken
+- [x] Tester för merge-logiken
 - [ ] Testa: skriv offline på båda enheterna, slå på nätet, inget ska försvinna
 
 **Klart när:** du skriver på mobilen och anteckningen dyker upp på datorn utan att du gör något.
