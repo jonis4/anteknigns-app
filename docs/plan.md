@@ -92,20 +92,42 @@ Hör ihop med:
 - [x] **Privat** via långtryck i listan (högerklick på dator)
 - [x] Lås för privata anteckningar (PIN)
 - [x] Privata anteckningar syns aldrig i listan förrän låset är öppnat
-- [ ] Lägg upp den nya versionen av funktionen `ai` i Supabase (annars görs varken rubrik eller kategori)
+- [x] Lägg upp den nya versionen av funktionen `ai` i Supabase (annars görs varken rubrik eller kategori)
 
 **Klart när:** du kan låna ut mobilen utan att privata anteckningar syns, och kategorierna stämmer oftast.
 
 ---
 
-## Fas 5 – Finputs
-**Mål:** från "funkar" till "känns rätt".
+## Fas 5 – Finputs och känsla
+**Mål:** från "funkar" till "känns rätt". Principerna står under "Känsla" i kravspec.md.
 
-- [ ] Designgenomgång mot Dieter Rams principer – ta bort allt som inte behövs
+**Grund (görs först, allt annat bygger på det)**
+- [ ] Designtokens som CSS-variabler: `--accent`, `--ease`, `--dur`, avstånd
+- [ ] Typografi: stor och tyngre rubrik, radhöjd 1.5–1.6 i editorn, generös marginal
+- [ ] Välj accentfärg och använd den bara på markör, AI-knapp och vald kategori
+- [ ] Mörkt läge med mjukare nyanser (t.ex. `#111` / `#e8e8e8`) i stället för ren svart/vit
+
+**Rörelse**
+- [ ] Övergång lista ↔ editor, ca 250–350 ms, ease-out
+- [ ] Tryck-respons på knappar och rader (`scale(0.97)`)
+- [ ] Listan animeras när anteckningar läggs till, tas bort eller flyttas
+- [ ] Haptik med `navigator.vibrate` vid swipe, flytta och lås (bara Android, bonus)
+- [ ] Respektera `prefers-reduced-motion`
+
+**Tomt läge och lista**
+- [ ] Tom anteckning visar dagens datum i stor, ljus text. Markör och tangentbord direkt
+- [ ] Listrad = rubrik + en rad förhandsvisning i grått + diskret datum, kategori som liten detalj
+
+**AI-ögonblicket**
+- [ ] Rättstavningen morfar texten mjukt i stället för att byta abrupt
+- [ ] Ångra/visa original använder samma rörelsespråk
+
+**Genomgång**
+- [ ] Designgenomgång mot Dieter Rams principer, ta bort allt som inte behövs
 - [ ] Mät uppstartstid, sätt ett mål och håll det
-- [ ] Gester och övergångar – bara där de minskar friktion
 - [ ] Gå igenom "Saker jag märkt" och åtgärda
 
+**Klart när:** du öppnar appen för att du vill, och inget av det du lagt till känns som brus.
 ---
 
 ## Parkerat (inte nu)

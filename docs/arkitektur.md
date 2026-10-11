@@ -99,6 +99,8 @@ Två policies: var och en kommer bara åt sina egna rader, och anonyma konton ko
 - Privata anteckningar visas inte i listan och går inte att öppna, inte heller via bakåtknappen, förrän låset är öppet.
 - Låset är stängt vid start och stängs så fort appen lämnas (`visibilitychange`).
 - PIN-koden sparas bara på enheten, som saltat PBKDF2-hashvärde i `localStorage`. Varje enhet har alltså sin egen PIN-kod.
+- Glömd kod: "Glömt koden?" skickar en inloggningslänk till kontot som koden är knuten till. När länken öppnas på enheten tas koden bort och en ny får väljas. Kontot knyts till koden när den väljs eller används, aldrig i efterhand av någon som inte kan den, så det hjälper inte att logga in med en annan mejl. Går bara på en enhet som är inloggad via Synka.
+- Följden är att den som har både enheten och tillgång till mejlen på den kan återställa koden.
 - Det är ett insynsskydd, inte kryptering: texten ligger i klartext i IndexedDB och i Supabase, precis som kravspecen säger.
 
 ## Kända buggfällor och hur de undviks

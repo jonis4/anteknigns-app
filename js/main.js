@@ -1,6 +1,6 @@
 // @ts-check
 import { aiEnabled, organize } from './ai.js';
-import { hasPin, isUnlocked, lock } from './lock.js';
+import { finishReset, hasPin, isUnlocked, lock } from './lock.js';
 import {
   categoriesOf,
   currentText,
@@ -12,14 +12,14 @@ import {
   withSuggestedCategory,
   withTitle,
 } from './store.js';
-import { configured, onSignedInElsewhere, signInFromUrl, signedIn } from './supabase.js';
+import { configured, onSignedInElsewhere, signInFromUrl, signedIn, signedInEmail } from './supabase.js';
 import { initSync, sync } from './sync.js';
 import { currentId, focusEditor, initEditor, openNote, reloadNote, save, showsPrivate } from './ui/editor.js';
 import { renderList } from './ui/list.js';
 import { initPin, resetPin } from './ui/pin.js';
 import { initSignIn, resetSignIn } from './ui/signin.js';
 
-/** @typedef {{ view: 'editor', id: string, fromList?: boolean } | { view: 'list' } | { view: 'signin' } | { view: 'pin' }} Route */
+/** @typedef {{ view: 'editor', id: string, fromList?: boolean } | { view: 'list' } | { view: 'signin' } | { view: 'pin', first?: boolean }} Route */
 
 /** Så många anteckningar får rubrik och kategori per omgång, så att en lång kö inte blir en skur av anrop. */
 const TITLES_PER_ROUND = 5;
@@ -169,8 +169,26 @@ initSignIn(signedInNow);
 onSignedInElsewhere(signedInNow);
 // Länken i mejlet kan också hamna i en app som redan är öppen.
 addEventListener('hashchange', () => {
-  if (signInFromUrl()) signedInNow();
+  if (!signInFromUrl()) return;
+  if (finishReset(signedInEmail())) {
+    go({ view: 'pin' });
+    sync();
+  } else {
+    signedInNow();
+  }
 });
+
+/** Lämnar PIN-vyn för listan. Kom man dit direkt från länken i mejlet finns inget att gå bakåt till. */
+function leavePin() {
+  if (!history.state?.first) {
+    history.back();
+    return;
+  }
+  /** @type {Route} */
+  const route = { view: 'list' };
+  history.replaceState(route, '');
+  show(route);
+}
 
 initPin(async () => {
   if (becomingPrivate) {
@@ -179,7 +197,7 @@ initPin(async () => {
     // PIN-koden valdes för att gömma anteckningen, så låset stängs igen direkt.
     lock();
   }
-  history.back();
+  leavePin();
 });
 
 lockButton.addEventListener('click', () => {
@@ -210,14 +228,22 @@ signinButton.addEventListener('click', () => go({ view: 'signin' }));
 signinBackButton.addEventListener('click', () => history.back());
 pinBackButton.addEventListener('click', () => {
   becomingPrivate = null;
-  history.back();
+  leavePin();
 });
 addEventListener('popstate', (event) => show(/** @type {Route | null} */ (event.state) ?? newNoteRoute()));
 
-// Appen öppnar alltid i en ny, tom anteckning. Utom när man kommer från länken i inloggningsmejlet:
-// då visas listan, så att man ser att anteckningarna kommer.
-/** @type {Route} */
-const start = signInFromUrl() ? { view: 'list' } : newNoteRoute();
+/**
+ * Appen öppnar alltid i en ny, tom anteckning. Utom när man kommer från länken i inloggningsmejlet:
+ * då visas listan, så att man ser att anteckningarna kommer. Var länken ett svar på "Glömt koden?"
+ * får man i stället välja en ny PIN-kod.
+ * @returns {Route}
+ */
+function startRoute() {
+  if (!signInFromUrl()) return newNoteRoute();
+  return finishReset(signedInEmail()) ? { view: 'pin', first: true } : { view: 'list' };
+}
+
+const start = startRoute();
 history.replaceState(start, '');
 show(start);
 

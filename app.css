@@ -228,6 +228,11 @@ button:focus-visible {
   padding: 0;
 }
 
+#pin-forgot {
+  color: var(--muted);
+  font-size: 0.9375rem;
+}
+
 .form [role="status"] {
   min-height: 1.6em;
   color: var(--muted);

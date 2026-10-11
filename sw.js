@@ -2,7 +2,7 @@
 /// <reference lib="webworker" />
 
 // Bumpa versionen vid varje deploy, annars ligger gammal kod kvar i cachen.
-const CACHE = 'notes-v5';
+const CACHE = 'notes-v6';
 
 /** Appens filer, relativa till sw.js så att det funkar under /<reponamn>/. */
 const FILES = [
