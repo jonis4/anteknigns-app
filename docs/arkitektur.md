@@ -26,6 +26,7 @@ js/
   ui/list.js
   ui/signin.js            – inloggning via mejl, för synk
   ui/pin.js               – välj och skriv PIN-kod
+  ui/motion.js            – all rörelse går härigenom (View Transitions) + haptik
 tests/
   store.test.js
   ai.test.js              – serverfunktionens logik, med låtsasversioner av Supabase och Anthropic
@@ -103,6 +104,22 @@ Två policies: var och en kommer bara åt sina egna rader, och anonyma konton ko
 - Följden är att den som har både enheten och tillgång till mejlen på den kan återställa koden.
 - Det är ett insynsskydd, inte kryptering: texten ligger i klartext i IndexedDB och i Supabase, precis som kravspecen säger.
 
+## Utseende och rörelse
+- **Designtokens** står överst i `app.css`: färger, avstånd, textstorlekar och rörelse (`--ease`, `--dur`, `--dur-view`, `--dur-morph`). Nya regler använder dem i stället för egna värden.
+- **Accentfärgen** (`--accent`, en dämpad terrakotta) används bara på markören, AI-knappen och fältet där man väljer kategori.
+- **All rörelse går via `animate()` i `ui/motion.js`**, som använder View Transitions. Vilken sorts ändring det är står i `data-motion` på `<html>`, och animationerna står under "Rörelse" i `app.css`:
+  - `forward` / `back` – byte av vy. Det nya kommer in från höger på väg in i appen, från vänster på väg ut.
+  - `list` – rader som läggs till, tas bort eller flyttas. Varje rad har ett eget namn (`--row`) så att webbläsaren kan följa den.
+  - `morph` – AI ändrar texten, eller Original lägger tillbaka den. Den gamla texten löses upp i oskärpa medan den nya framkallas, så det som är lika står still. Det är appens mest genomarbetade rörelse (se "Känsla" i kravspec.md). Medan AI arbetar andas texten långsamt, och Original-knappen glider in som kvitto.
+- Utan stöd för View Transitions, eller med `prefers-reduced-motion`, görs ändringen direkt. Inget i appen är beroende av att en animation körs.
+- Tom anteckning visar dagens datum som `placeholder`. Det försvinner vid första tecknet och sparas aldrig.
+
+## Uppstart
+- **Mål: editorn är klar att skriva i inom 200 ms** vid varm start (appen cachad av service workern).
+- Mätt 2026-10-11 i Edge på datorn, mobilstor yta: median 91 ms till `app-ready`, 96 ms till första bild, över sju starter. På mobilen är det inte mätt.
+- Mät själv: öppna appen, och kör `performance.getEntriesByName('app-ready')[0].startTime` i DevTools-konsolen.
+- Det som håller tiden nere: editorn står direkt i HTML:en med `autofocus`, modulerna hämtas parallellt (`modulepreload`), och synk och rubriker startar först efter att editorn visats.
+
 ## Kända buggfällor och hur de undviks
 | Fälla | Lösning |
 |---|---|
@@ -112,12 +129,13 @@ Två policies: var och en kommer bara åt sina egna rader, och anonyma konton ko
 | Supabase-klienten gör uppstarten seg | Ladda den efter att editorn visats |
 | Tomma anteckningar fyller listan | Spara inte förrän det finns text |
 | AI-fel förstör text | AI lägger bara till versioner, rör aldrig befintliga |
+| En AI-rubrik skriver över text som ändrats offline på en annan enhet | Rubrik och AI-kategori flyttar `updatedAt` ett enda steg, inte till nu, så en verklig textändring är alltid nyare |
 
 ## Testning
 - `node --test` (inbyggt, inget att installera).
 - Testa `store.js` och merge-logiken i `sync.js`. UI testas för hand.
 
 ## Storleksbudget
-- Egen kod: runt 20–30 kB.
+- Egen kod: 75 kB okomprimerat, 27 kB gzippat (det GitHub Pages skickar). Det ursprungliga målet 20–30 kB gällde innan AI, synk och lås fanns.
 - Typsnitt: 0 kB (systemtypsnitt).
-- Supabase-klienten blir den största delen, och laddas efter första visningen.
+- Inga externa bibliotek.

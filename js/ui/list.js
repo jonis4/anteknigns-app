@@ -1,5 +1,5 @@
 // @ts-check
-import { displayTitle, editedAt } from '../store.js';
+import { displayTitle, editedAt, preview } from '../store.js';
 
 /** @typedef {import('../store.js').Note} Note */
 
@@ -13,6 +13,9 @@ import { displayTitle, editedAt } from '../store.js';
 const list = /** @type {HTMLUListElement} */ (document.getElementById('notes'));
 const suggestions = /** @type {HTMLDataListElement} */ (document.getElementById('categories'));
 
+/** Så många rader får ett eget namn för animering. Fler än så märks inte och kostar bara. */
+const ANIMATED_ROWS = 40;
+
 /**
  * @param {Note[]} notes redan sorterade, senast ändrad först
  * @param {string[]} categories kategorierna som föreslås när man byter
@@ -20,7 +23,14 @@ const suggestions = /** @type {HTMLDataListElement} */ (document.getElementById(
  */
 export function renderList(notes, categories, actions) {
   suggestions.replaceChildren(...categories.map((category) => new Option(category)));
-  list.replaceChildren(...notes.map((note) => row(note, actions)));
+  list.replaceChildren(
+    ...notes.map((note, index) => {
+      const item = row(note, actions);
+      // Namnet låter webbläsaren följa raden när listan ändras (se "Rörelse" i app.css).
+      if (index < ANIMATED_ROWS) item.style.setProperty('--row', `row-${note.id}`);
+      return item;
+    }),
+  );
 }
 
 /**
@@ -40,16 +50,16 @@ function row(note, actions) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'row';
-  button.append(title, time);
-  button.addEventListener('click', () => actions.onOpen(note.id));
+  const text = document.createElement('span');
+  text.className = 'preview';
+  text.textContent = preview(note);
 
-  const labels = [note.private ? 'Privat' : '', note.category].filter(Boolean);
-  if (labels.length > 0) {
-    const meta = document.createElement('span');
-    meta.className = 'meta';
-    meta.textContent = labels.join(' · ');
-    button.append(meta);
-  }
+  const meta = document.createElement('span');
+  meta.className = 'meta';
+  meta.textContent = [note.private ? 'Privat' : '', note.category].filter(Boolean).join(' · ');
+
+  button.append(title, time, text, meta);
+  button.addEventListener('click', () => actions.onOpen(note.id));
 
   const item = document.createElement('li');
   item.append(button);

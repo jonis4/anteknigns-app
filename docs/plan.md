@@ -102,29 +102,29 @@ Hör ihop med:
 **Mål:** från "funkar" till "känns rätt". Principerna står under "Känsla" i kravspec.md.
 
 **Grund (görs först, allt annat bygger på det)**
-- [ ] Designtokens som CSS-variabler: `--accent`, `--ease`, `--dur`, avstånd
-- [ ] Typografi: stor och tyngre rubrik, radhöjd 1.5–1.6 i editorn, generös marginal
-- [ ] Välj accentfärg och använd den bara på markör, AI-knapp och vald kategori
-- [ ] Mörkt läge med mjukare nyanser (t.ex. `#111` / `#e8e8e8`) i stället för ren svart/vit
+- [x] Designtokens som CSS-variabler: `--accent`, `--ease`, `--dur`, avstånd
+- [x] Typografi: stor och tyngre rubrik, radhöjd 1.5–1.6 i editorn, generös marginal
+- [x] Välj accentfärg och använd den bara på markör, AI-knapp och vald kategori (dämpad terrakotta; "vald kategori" = fältet där man väljer den, eftersom det inte finns något kategorifilter)
+- [x] Mörkt läge med mjukare nyanser (t.ex. `#111` / `#e8e8e8`) i stället för ren svart/vit
 
 **Rörelse**
-- [ ] Övergång lista ↔ editor, ca 250–350 ms, ease-out
-- [ ] Tryck-respons på knappar och rader (`scale(0.97)`)
-- [ ] Listan animeras när anteckningar läggs till, tas bort eller flyttas
-- [ ] Haptik med `navigator.vibrate` vid swipe, flytta och lås (bara Android, bonus)
-- [ ] Respektera `prefers-reduced-motion`
+- [x] Övergång lista ↔ editor, ca 250–350 ms, ease-out
+- [x] Tryck-respons på knappar och rader (`scale(0.97)`)
+- [x] Listan animeras när anteckningar läggs till, tas bort eller flyttas
+- [x] Haptik med `navigator.vibrate` vid flytta, privat och lås (bara Android, bonus)
+- [x] Respektera `prefers-reduced-motion`
 
 **Tomt läge och lista**
-- [ ] Tom anteckning visar dagens datum i stor, ljus text. Markör och tangentbord direkt
-- [ ] Listrad = rubrik + en rad förhandsvisning i grått + diskret datum, kategori som liten detalj
+- [x] Tom anteckning visar dagens datum i stor, ljus text. Markör och tangentbord direkt
+- [x] Listrad = rubrik + en rad förhandsvisning i grått + diskret datum, kategori som liten detalj
 
 **AI-ögonblicket**
-- [ ] Rättstavningen morfar texten mjukt i stället för att byta abrupt
-- [ ] Ångra/visa original använder samma rörelsespråk
+- [x] Rättstavningen morfar texten mjukt i stället för att byta abrupt
+- [x] Ångra/visa original använder samma rörelsespråk
 
 **Genomgång**
 - [ ] Designgenomgång mot Dieter Rams principer, ta bort allt som inte behövs
-- [ ] Mät uppstartstid, sätt ett mål och håll det
+- [x] Mät uppstartstid, sätt ett mål och håll det (mätt på dator; mobilen återstår, se "Uppstart" i arkitektur.md)
 - [ ] Gå igenom "Saker jag märkt" och åtgärda
 
 **Klart när:** du öppnar appen för att du vill, och inget av det du lagt till känns som brus.

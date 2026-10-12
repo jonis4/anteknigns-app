@@ -41,14 +41,14 @@ test('merge: vinnaren tas hel, versioner blandas aldrig', () => {
 
 test('toRow och fromRow är varandras motsats', () => {
   const plain = createNote('11111111-1111-4111-8111-111111111111', 'text', 1000);
-  const titled = withTitle(withAiVersion(plain, 'Text.', 'spellcheck', 2000), 'Rubrik', 3000);
+  const titled = withTitle(withAiVersion(plain, 'Text.', 'spellcheck', 2000), 'Rubrik');
   for (const note of [plain, titled, asDeleted(titled, 4000)]) {
     assert.deepEqual(fromRow(toRow(note)), note);
   }
 });
 
 test('toRow använder tabellens kolumnnamn och skickar aldrig user_id', () => {
-  const row = toRow(withTitle(createNote('a', 'text', 1000), 'Rubrik', 2000));
+  const row = toRow(withTitle(createNote('a', 'text', 1000), 'Rubrik'));
   assert.deepEqual(Object.keys(row).sort(), ['category', 'created_at', 'deleted', 'id', 'private', 'title', 'titled_at', 'updated_at', 'versions']);
   assert.equal(toRow(createNote('a', 'text', 1000)).titled_at, null);
 });
@@ -56,4 +56,15 @@ test('toRow använder tabellens kolumnnamn och skickar aldrig user_id', () => {
 test('fromRow bryr sig inte om serverns egna kolumner', () => {
   const row = { ...toRow(createNote('a', 'text', 1000)), user_id: 'u', server_updated_at: '2026-10-11T10:00:00Z' };
   assert.deepEqual(fromRow(row), createNote('a', 'text', 1000));
+});
+
+test('en AI-rubrik vinner aldrig över en textändring som gjordes offline under tiden', () => {
+  const base = createNote('a', 'En anteckning som finns på båda enheterna', 1000);
+  // Datorn ger den en rubrik klockan 5000. Mobilen ändrade texten offline klockan 3000 och synkar först nu.
+  const titledOnDesktop = withTitle(base, 'Rubrik');
+  const editedOnPhone = withText(base, 'En anteckning som finns på båda enheterna, nu längre', 3000);
+  assert.equal(merge(titledOnDesktop, editedOnPhone), editedOnPhone);
+  assert.equal(merge(editedOnPhone, titledOnDesktop), editedOnPhone);
+  // Rubriken når ändå en enhet som bara har den otitlade versionen.
+  assert.equal(merge(base, titledOnDesktop), titledOnDesktop);
 });

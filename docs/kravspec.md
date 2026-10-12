@@ -29,6 +29,17 @@ Minimal friktion mellan tanke och anteckning. Man skriver fritt utan att bry sig
 - Inga inställningar – följer systemet (mörkt läge enligt OS, systemtypsnitt)
 - Snabb uppstart räknas som en del av minimalismen
 
+### Känsla
+Minimal ska inte betyda tom. Appen ska kännas lugn och levande, så att man vill öppna den.
+
+- Rörelse används bara där den minskar friktion eller ger känsla, aldrig som dekoration
+- Typografin bär designen, med tydlig hierarki även på en nästan tom skärm
+- En enda dämpad accentfärg, sparsamt använd
+- Den tomma anteckningen ska inbjuda, som att appen väntar på en
+- AI-ögonblicket (rättstavning och ångra) är appens kärna och ska ha den mest genomarbetade rörelsen
+- Mikrobelöningar i stället för bekräftelser: appen visar att något hänt genom hur den rör sig
+- Prestanda går före animation
+
 ## Tekniska beslut
 - **PWA** – HTML/CSS/JS, hostas på **GitHub Pages**, installeras via "Lägg till på startskärmen". Ingen APK, ingen App Store
 - Plan B om PWA ger för mycket friktion: paketera samma webbkod till riktig app med **Capacitor** (ingen omskrivning)

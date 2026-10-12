@@ -11,6 +11,7 @@ import {
   withAiVersion,
   withText,
 } from '../store.js';
+import { animate } from './motion.js';
 
 /** @typedef {import('../store.js').Note} Note */
 /** @typedef {import('../store.js').AiSource} AiSource */
@@ -192,8 +193,10 @@ async function runAction(action) {
     );
     if (id === noteId && saved && currentText(saved) === after) {
       note = saved;
-      textarea.value = after;
       hideStatus();
+      await animate('morph', () => {
+        textarea.value = after;
+      });
     }
   } catch (err) {
     if (id === noteId) showStatus(ERRORS[err instanceof AiError ? err.code : 'failed']);
@@ -212,7 +215,10 @@ async function showOriginal() {
   const saved = await updateNote(noteId, (old) => old && restoreOriginal(old));
   if (!saved || id !== noteId) return;
   note = saved;
-  textarea.value = currentText(saved);
+  // Samma rörelse tillbaka som när AI ändrade texten.
+  await animate('morph', () => {
+    textarea.value = currentText(saved);
+  });
   refreshButtons();
 }
 
@@ -224,6 +230,8 @@ function show(noteId, saved) {
   id = noteId;
   note = saved;
   textarea.value = saved ? currentText(saved) : '';
+  // En tom anteckning visar dagens datum tills man börjar skriva.
+  textarea.placeholder = today();
   setMenu(false);
   if (!busy) hideStatus();
   resetDelete();
@@ -273,6 +281,12 @@ function showStatus(text, stay = false) {
 function hideStatus() {
   clearTimeout(statusTimer);
   status.hidden = true;
+}
+
+/** @returns {string} t.ex. "Söndag 11 oktober" */
+function today() {
+  const date = new Date().toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long' });
+  return date.charAt(0).toUpperCase() + date.slice(1);
 }
 
 function resetDelete() {

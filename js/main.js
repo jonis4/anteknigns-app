@@ -16,6 +16,7 @@ import { configured, onSignedInElsewhere, signInFromUrl, signedIn, signedInEmail
 import { initSync, sync } from './sync.js';
 import { currentId, focusEditor, initEditor, openNote, reloadNote, save, showsPrivate } from './ui/editor.js';
 import { renderList } from './ui/list.js';
+import { animate, haptic } from './ui/motion.js';
 import { initPin, resetPin } from './ui/pin.js';
 import { initSignIn, resetSignIn } from './ui/signin.js';
 
@@ -35,6 +36,11 @@ const signinBackButton = /** @type {HTMLButtonElement} */ (document.getElementBy
 const lockButton = /** @type {HTMLButtonElement} */ (document.getElementById('lock'));
 const pinBackButton = /** @type {HTMLButtonElement} */ (document.getElementById('pin-back'));
 
+/** Hur djupt in i appen varje vy ligger. Avgör åt vilket håll bytet mellan två vyer rör sig. */
+const DEPTH = { list: 0, editor: 1, signin: 1, pin: 1 };
+
+/** @type {Route['view']} */
+let currentView = 'editor';
 let titling = false;
 /** Anteckningen som ska bli privat så snart en PIN-kod är vald. @type {string | null} */
 let becomingPrivate = null;
@@ -44,8 +50,16 @@ function newNoteRoute() {
   return { view: 'editor', id: crypto.randomUUID() };
 }
 
+/**
+ * Uppdaterar listan medan den visas, så att rader som läggs till, tas bort eller flyttas rör sig dit.
+ * @returns {Promise<void>}
+ */
+function showList() {
+  return listView.hidden ? renderNotes() : animate('list', renderNotes);
+}
+
 /** @returns {Promise<void>} */
-async function showList() {
+async function renderNotes() {
   const all = await listNotes();
   // Privata anteckningar finns inte i listan förrän låset är öppet.
   const notes = isUnlocked() ? all : all.filter((note) => !note.private);
@@ -53,6 +67,7 @@ async function showList() {
     onOpen: (id) => go({ view: 'editor', id, fromList: true }),
     onCategory: async (id, category) => {
       await updateNote(id, (note) => note && withCategory(note, category));
+      haptic();
       showList();
     },
     onPrivate: async (id, value) => {
@@ -63,6 +78,7 @@ async function showList() {
         return;
       }
       await updateNote(id, (note) => note && withPrivate(note, value));
+      haptic();
       showList();
     },
   });
@@ -81,15 +97,20 @@ async function show(route) {
     await openNote(route.id, isUnlocked());
   } else {
     await save();
-    await showList();
+    await renderNotes();
   }
-  listView.hidden = route.view !== 'list';
-  editorView.hidden = route.view !== 'editor';
-  signinView.hidden = route.view !== 'signin';
-  pinView.hidden = route.view !== 'pin';
-  if (route.view === 'editor') focusEditor();
-  if (route.view === 'signin') resetSignIn();
-  if (route.view === 'pin') resetPin();
+  const change = () => {
+    listView.hidden = route.view !== 'list';
+    editorView.hidden = route.view !== 'editor';
+    signinView.hidden = route.view !== 'signin';
+    pinView.hidden = route.view !== 'pin';
+    if (route.view === 'editor') focusEditor();
+    if (route.view === 'signin') resetSignIn();
+    if (route.view === 'pin') resetPin();
+  };
+  if (route.view === currentView) change();
+  else await animate(DEPTH[route.view] > DEPTH[currentView] ? 'forward' : 'back', change);
+  currentView = route.view;
   // Rubrik och kategori görs när man lämnat en anteckning, aldrig medan man skriver.
   refreshTitles();
 }
@@ -197,6 +218,7 @@ initPin(async () => {
     // PIN-koden valdes för att gömma anteckningen, så låset stängs igen direkt.
     lock();
   }
+  haptic();
   leavePin();
 });
 
@@ -206,6 +228,7 @@ lockButton.addEventListener('click', () => {
     return;
   }
   lock();
+  haptic();
   showList();
 });
 
@@ -245,7 +268,8 @@ function startRoute() {
 
 const start = startRoute();
 history.replaceState(start, '');
-show(start);
+// Märket används för att mäta uppstartstiden (se "Uppstart" i arkitektur.md).
+show(start).then(() => performance.mark('app-ready'));
 
 // Ber webbläsaren att inte rensa anteckningarna när lagringsutrymmet tryter.
 navigator.storage?.persist?.();

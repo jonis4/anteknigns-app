@@ -1,19 +1,48 @@
+/* Designtokens. Allt som återkommer i gränssnittet hämtas härifrån. */
 :root {
   color-scheme: light dark;
-  --bg: #ffffff;
-  --fg: #111111;
-  --muted: #8a8a8a;
-  --line: #ececec;
+
+  /* Färg. Mjuka nyanser i stället för ren svart och vit. */
+  --bg: #fbfbfa;
+  --fg: #1a1a1a;
+  --muted: #6e6e6e;
+  --faint: #b9b9b6;
+  --line: #ebebe8;
+  /* En enda dämpad accent, bara på markören, AI-knappen och vald kategori. */
+  --accent: #b4532a;
+
+  /* Avstånd */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
   /* Texten hålls i en läsbar spalt, men hela ytan går att trycka på. */
-  --gutter: max(1.25rem, env(safe-area-inset-left), env(safe-area-inset-right), calc((100% - 40rem) / 2));
+  --gutter: max(1.5rem, env(safe-area-inset-left), env(safe-area-inset-right), calc((100% - 38rem) / 2));
+  --tap: 2.75rem;
+
+  /* Text */
+  --text: 1.0625rem;
+  --text-small: 0.9375rem;
+  --text-detail: 0.8125rem;
+  --text-large: 1.75rem;
+  --leading: 1.6;
+
+  /* Rörelse. En kurva och två längder, så att allt rör sig på samma sätt. */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur: 180ms;
+  --dur-view: 300ms;
+  --dur-morph: 600ms;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #111111;
-    --fg: #ededed;
-    --muted: #7a7a7a;
+    --fg: #e8e8e8;
+    --muted: #8c8c8c;
+    --faint: #4a4a4a;
     --line: #222222;
+    --accent: #d4875c;
   }
 }
 
@@ -31,7 +60,8 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 1.0625rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: var(--text) / var(--leading) system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
 }
 
 main {
@@ -44,7 +74,11 @@ header {
   display: flex;
   justify-content: space-between;
   flex: none;
-  padding: max(0.25rem, env(safe-area-inset-top)) calc(var(--gutter) - 0.75rem) 0;
+  padding: max(var(--space-1), env(safe-area-inset-top)) calc(var(--gutter) - var(--space-3)) 0;
+}
+
+header div {
+  display: flex;
 }
 
 button {
@@ -54,10 +88,24 @@ button {
   font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease), color var(--dur) var(--ease);
 }
 
-header div {
-  display: flex;
+/* Tryck-respons: knappar och rader ger efter lite under fingret. */
+button:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.7;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--muted);
+  outline-offset: -2px;
+  border-radius: var(--space-2);
 }
 
 /* Raden under sidhuvudet: AI-valen, eller ett kort besked. */
@@ -66,59 +114,79 @@ header div {
   justify-content: flex-end;
   flex: none;
   margin: 0;
-  padding: 0 calc(var(--gutter) - 0.75rem);
+  padding: 0 calc(var(--gutter) - var(--space-3));
 }
 
 header button,
 .bar button,
 #status {
-  min-height: 2.75rem;
-  padding: 0 0.75rem;
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
   color: var(--muted);
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
 }
 
 #status {
   align-items: center;
 }
 
-#ai[aria-expanded="true"] {
-  color: var(--fg);
+#ai {
+  color: var(--accent);
 }
 
-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-#editor:read-only {
-  color: var(--muted);
-}
-
-button:focus-visible {
-  outline: 2px solid var(--muted);
-  outline-offset: -2px;
-  border-radius: 0.5rem;
-}
+/* --- Editor --- */
 
 #editor {
   display: block;
   flex: 1;
   width: 100%;
   margin: 0;
-  padding: 0.5rem var(--gutter) max(1.5rem, env(safe-area-inset-bottom));
+  padding: var(--space-4) var(--gutter) max(var(--space-6), env(safe-area-inset-bottom));
   border: 0;
   outline: 0;
   resize: none;
   background: var(--bg);
   color: var(--fg);
+  caret-color: var(--accent);
   font: inherit;
+  transition: color var(--dur-view) var(--ease);
 }
+
+/* Tom anteckning: dagens datum, stort och ljust, tills man börjar skriva. */
+#editor::placeholder {
+  color: var(--faint);
+  font-size: var(--text-large);
+  font-weight: 300;
+  /* Tät radhöjd, så att datumet hamnar i höjd med markören. */
+  line-height: 1;
+  opacity: 1;
+}
+
+/* Medan AI arbetar tonas texten ner och andas långsamt, så att det syns att något pågår. */
+#editor:read-only {
+  color: var(--muted);
+  animation: breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% { opacity: 0.55; }
+}
+
+/* Original dyker upp som kvitto på att AI ändrat något: originalet finns kvar, ett tryck bort. */
+#original:not([hidden]) {
+  animation: appear var(--dur-morph) var(--ease) both;
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateX(0.5rem); }
+}
+
+/* --- Lista --- */
 
 #notes {
   flex: 1;
   margin: 0;
-  padding: 0 var(--gutter) max(1.5rem, env(safe-area-inset-bottom));
+  padding: var(--space-2) var(--gutter) max(var(--space-6), env(safe-area-inset-bottom));
   overflow-y: auto;
   list-style: none;
 }
@@ -127,79 +195,107 @@ button:focus-visible {
   border-top: 1px solid var(--line);
 }
 
+/* Rubrik och datum på första raden, förhandsvisning och kategori på andra. */
 #notes .row {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: baseline;
-  column-gap: 1rem;
+  column-gap: var(--space-4);
+  row-gap: 0.125rem;
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.75rem 0;
+  padding: var(--space-4) 0;
   text-align: left;
+  transform-origin: left center;
   /* Långtryck öppnar radens val, inte systemets meny eller textmarkering. */
   -webkit-touch-callout: none;
   user-select: none;
 }
 
-#notes .title {
+#notes .title,
+#notes .preview {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+#notes .title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+#notes .preview {
+  grid-column: 1;
+  min-height: 1.5em;
+  color: var(--muted);
+  font-size: var(--text-small);
+  line-height: 1.5;
 }
 
 #notes time,
 #notes .meta {
+  justify-self: end;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-detail);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 #notes .meta {
-  grid-column: 1 / -1;
+  grid-column: 2;
+  max-width: 9rem;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* Radens val: kategori och privat. Öppnas med långtryck eller högerklick. */
 #notes .options {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding-bottom: 0.75rem;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+}
+
+#notes .options button {
+  flex: none;
+  min-height: var(--tap);
+  color: var(--muted);
+  font-size: var(--text-small);
+}
+
+/* --- Fält: kategori, mejl, PIN --- */
+
+#notes .options input,
+.form input {
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--faint);
+  border-radius: 0;
+  outline: 0;
+  background: none;
+  color: var(--fg);
+  caret-color: var(--accent);
+  font: inherit;
+  transition: border-color var(--dur) var(--ease);
 }
 
 #notes .options input {
   flex: 1;
   min-width: 0;
-  padding: 0.5rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--muted);
-  border-radius: 0;
-  outline: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
 }
 
+/* Vald kategori: fältet där man väljer den. */
 #notes .options input:focus {
-  border-bottom-color: var(--fg);
-}
-
-#notes .options button {
-  flex: none;
-  min-height: 2.75rem;
-  color: var(--muted);
-  font-size: 0.9375rem;
+  border-bottom-color: var(--accent);
 }
 
 .form {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 0.5rem var(--gutter);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--gutter);
 }
 
 .form p {
@@ -209,14 +305,6 @@ button:focus-visible {
 .form input {
   width: 100%;
   max-width: 24rem;
-  padding: 0.5rem 0;
-  border: 0;
-  border-bottom: 1px solid var(--muted);
-  border-radius: 0;
-  outline: 0;
-  background: none;
-  color: var(--fg);
-  font: inherit;
 }
 
 .form input:focus {
@@ -224,17 +312,103 @@ button:focus-visible {
 }
 
 .form button {
-  min-height: 2.75rem;
+  min-height: var(--tap);
   padding: 0;
+  font-weight: 600;
 }
 
-#pin-forgot {
+#pin-forgot,
+.form [role="status"] {
   color: var(--muted);
-  font-size: 0.9375rem;
+  font-size: var(--text-small);
+  font-weight: 400;
 }
 
 .form [role="status"] {
   min-height: 1.6em;
-  color: var(--muted);
-  font-size: 0.9375rem;
+}
+
+/* --- Rörelse --- */
+/* Vyer, listan och AI-ändringar animeras med View Transitions (se js/ui/motion.js).
+   Vilken sorts ändring det är står i data-motion på <html>. */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* Framåt (lista → anteckning): det nya kommer in från höger. Bakåt: från vänster. */
+:root[data-motion="forward"]::view-transition-old(root) {
+  animation: var(--dur-view) var(--ease) both leave-left;
+}
+
+:root[data-motion="forward"]::view-transition-new(root) {
+  animation: var(--dur-view) var(--ease) both enter-right;
+}
+
+:root[data-motion="back"]::view-transition-old(root) {
+  animation: var(--dur-view) var(--ease) both leave-right;
+}
+
+:root[data-motion="back"]::view-transition-new(root) {
+  animation: var(--dur-view) var(--ease) both enter-left;
+}
+
+@keyframes enter-right {
+  from { opacity: 0; transform: translateX(1.5rem); }
+}
+
+@keyframes enter-left {
+  from { opacity: 0; transform: translateX(-1.5rem); }
+}
+
+@keyframes leave-left {
+  to { opacity: 0; transform: translateX(-1.5rem); }
+}
+
+@keyframes leave-right {
+  to { opacity: 0; transform: translateX(1.5rem); }
+}
+
+/* Listan: varje rad får ett eget namn, så att den glider till sin nya plats
+   och nya eller borttagna rader tonar in och ut. */
+:root[data-motion="list"] #notes li {
+  view-transition-name: var(--row);
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--dur-view);
+  animation-timing-function: var(--ease);
+}
+
+/* AI-ögonblicket, appens mest genomarbetade rörelse: den gamla texten löses upp i oskärpa
+   medan den nya framkallas ur den. Det som är lika står still, det som ändrats byter skepnad. */
+:root[data-motion="morph"] #editor {
+  view-transition-name: editor-text;
+}
+
+::view-transition-old(editor-text) {
+  animation: var(--dur-morph) var(--ease) both dissolve;
+}
+
+::view-transition-new(editor-text) {
+  animation: var(--dur-morph) var(--ease) both develop;
+}
+
+@keyframes dissolve {
+  to { opacity: 0; filter: blur(3px); }
+}
+
+@keyframes develop {
+  from { opacity: 0; filter: blur(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+    transition: none !important;
+  }
 }

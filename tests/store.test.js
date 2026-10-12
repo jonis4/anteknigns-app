@@ -10,6 +10,7 @@ import {
   editedAt,
   needsTitle,
   originalText,
+  preview,
   restoreOriginal,
   visibleNotes,
   withAiVersion,
@@ -133,15 +134,15 @@ test('rubrik och kategori behövs när texten ändrats sedan sist, även för ko
   const long = createNote('a', LONG, 1000);
   assert.equal(needsTitle(long), true);
   assert.equal(needsTitle(asDeleted(long, 2000)), false);
-  const titled = withTitle(long, 'Rubrik', 5000);
+  const titled = withTitle(long, 'Rubrik');
   assert.equal(needsTitle(titled), false);
   assert.equal(needsTitle(withText(titled, LONG + ' och mer', 6000)), true);
 });
 
 test('withTitle ändrar inte när texten senast ändrades, så listan behåller ordningen', () => {
-  const titled = withTitle(createNote('a', LONG, 1000), 'Rubrik', 5000);
+  const titled = withTitle(createNote('a', LONG, 1000), 'Rubrik');
   assert.equal(titled.title, 'Rubrik');
-  assert.equal(titled.updatedAt, 5000);
+  assert.equal(titled.updatedAt, 1001);
   assert.equal(editedAt(titled), 1000);
   const other = createNote('b', 'nyare', 2000);
   assert.deepEqual(visibleNotes([titled, other]).map((note) => note.id), ['b', 'a']);
@@ -150,24 +151,24 @@ test('withTitle ändrar inte när texten senast ändrades, så listan behåller 
 test('displayTitle: AI-rubriken om den finns, annars första raden', () => {
   assert.equal(displayTitle(createNote('a', '  köp mjölk  ', 1000)), 'köp mjölk');
   assert.equal(displayTitle(createNote('a', LONG + '\nrad två', 1000)), LONG);
-  const titled = withTitle(createNote('a', LONG, 1000), 'Rubrik', 2000);
+  const titled = withTitle(createNote('a', LONG, 1000), 'Rubrik');
   assert.equal(displayTitle(titled), 'Rubrik');
   assert.equal(displayTitle(withText(titled, 'kort nu', 3000)), 'kort nu');
 });
 
 test('AI:s kategori gäller bara när anteckningen saknar kategori', () => {
   const note = createNote('a', 'köp mjölk', 1000);
-  const sorted = withSuggestedCategory(note, 'Inköp', 2000);
+  const sorted = withSuggestedCategory(note, 'Inköp');
   assert.equal(sorted.category, 'Inköp');
-  assert.equal(sorted.updatedAt, 2000);
-  assert.equal(withSuggestedCategory(sorted, 'Mat', 3000), sorted);
-  assert.equal(withSuggestedCategory(note, '', 3000), note);
+  assert.equal(sorted.updatedAt, 1001);
+  assert.equal(withSuggestedCategory(sorted, 'Mat'), sorted);
+  assert.equal(withSuggestedCategory(note, ''), note);
 });
 
 test('ett eget val av kategori står kvar när AI föreslår en annan', () => {
   const chosen = withCategory(createNote('a', 'köp mjölk', 1000), 'Hemma', 2000);
   assert.equal(chosen.category, 'Hemma');
-  assert.equal(withSuggestedCategory(chosen, 'Inköp', 3000).category, 'Hemma');
+  assert.equal(withSuggestedCategory(chosen, 'Inköp').category, 'Hemma');
   assert.equal(withCategory(chosen, 'Hemma', 3000), chosen);
 });
 
@@ -191,4 +192,14 @@ test('categoriesOf: unika, i bokstavsordning, utan tomma och borttagna', () => {
     asDeleted(withCategory(createNote('f', 'borta', 1000), 'Borttaget')),
   ];
   assert.deepEqual(categoriesOf(notes), ['Arbete', 'Idéer', 'Ö-saker']);
+});
+
+test('preview: det som följer på rubriken, på en rad', () => {
+  assert.equal(preview(createNote('a', 'köp mjölk', 1000)), '');
+  assert.equal(preview(createNote('a', 'Handla\n\n  mjölk  \nbröd', 1000)), 'mjölk bröd');
+  // Med AI-rubrik är hela texten förhandsvisning, eftersom rubriken inte står i den.
+  const titled = withTitle(createNote('a', LONG + '\nrad två', 1000), 'Rubrik');
+  assert.equal(preview(titled), LONG + ' rad två');
+  assert.equal(preview(createNote('a', 'x'.repeat(500) + '\ny', 1000)).length, 1);
+  assert.equal(preview(withTitle(createNote('a', 'x'.repeat(500), 1000), 'Rubrik')).length, 200);
 });

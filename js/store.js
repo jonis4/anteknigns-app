@@ -147,25 +147,25 @@ export function needsTitle(note) {
 }
 
 /**
+ * Rubriken som AI ger. updatedAt flyttas bara ett steg, inte till nu: det räcker för att rubriken ska
+ * synkas, men en textändring som gjorts offline på en annan enhet under tiden är fortfarande nyare och vinner.
  * @param {Note} note
  * @param {string} title
- * @param {number} [now]
  * @returns {Note}
  */
-export function withTitle(note, title, now = Date.now()) {
-  return { ...note, title, titledAt: editedAt(note), updatedAt: now };
+export function withTitle(note, title) {
+  return { ...note, title, titledAt: editedAt(note), updatedAt: note.updatedAt + 1 };
 }
 
 /**
  * Kategorin som AI föreslår. Gäller bara om anteckningen saknar kategori, så att den aldrig
- * flyttas runt i efterhand och ett eget val alltid står kvar.
+ * flyttas runt i efterhand och ett eget val alltid står kvar. updatedAt flyttas ett steg, som i withTitle.
  * @param {Note} note
  * @param {string} category
- * @param {number} [now]
  * @returns {Note}
  */
-export function withSuggestedCategory(note, category, now = Date.now()) {
-  return note.category === '' && category !== '' ? { ...note, category, updatedAt: now } : note;
+export function withSuggestedCategory(note, category) {
+  return note.category === '' && category !== '' ? { ...note, category, updatedAt: note.updatedAt + 1 } : note;
 }
 
 /**
@@ -207,6 +207,18 @@ export function categoriesOf(notes) {
 export function displayTitle(note) {
   const firstLine = currentText(note).trim().split('\n', 1)[0].trim();
   return isShort(note) ? firstLine : note.title || firstLine;
+}
+
+/**
+ * En rad förhandsvisning till listan: det som står efter rubriken. När rubriken kommer från AI
+ * är det början av texten, annars det som följer på första raden.
+ * @param {Note} note
+ * @returns {string}
+ */
+export function preview(note) {
+  const lines = currentText(note).split('\n').map((line) => line.trim()).filter((line) => line !== '');
+  const rest = lines[0] === displayTitle(note) ? lines.slice(1) : lines;
+  return rest.join(' ').slice(0, 200);
 }
 
 /**
